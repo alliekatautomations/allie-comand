@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Allie-Kat Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --black:#050608; --deep:#090b10; --panel:#0d1018; --card:#111520; --card2:#161b28;
+  --border:#1e2535; --border2:#28334a;
+  --blue:#2d8cff; --blue2:#1a6fd4; --blue3:#0f4fa3;
+  --bglow:rgba(45,140,255,0.14); --bglow2:rgba(45,140,255,0.07);
+  --cyan:#00d4ff; --cglow:rgba(0,212,255,0.1);
+  --green:#00e676; --gdim:rgba(0,230,118,0.11);
+  --yellow:#ffd740; --ydim:rgba(255,215,64,0.11);
+  --red:#ff4d6a; --rdim:rgba(255,77,106,0.11);
+  --purple:#b388ff; --pdim:rgba(179,136,255,0.11);
+  --text:#e2e8f5; --muted:#7a88a8; --dim:#3d4d6a;
+  --ff:'Barlow Condensed',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+  --fd:'Bebas Neue',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden}
+body{background:var(--black);color:var(--text);font-family:var(--ff);font-size:15px;line-height:1.5}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.025) 3px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+header{background:var(--deep);border-bottom:2px solid var(--blue3);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 24px rgba(45,140,255,.1)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-hex{width:34px;height:34px;position:relative;display:flex;align-items:center;justify-content:center}
+.logo-hex::before{content:'';position:absolute;inset:0;background:var(--blue);clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);animation:hpulse 3s ease-in-out infinite}
+@keyframes hpulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4) drop-shadow(0 0 10px var(--blue))}}
+.logo-hex span{font-family:var(--fd);font-size:13px;color:#fff;position:relative;z-index:1;letter-spacing:1px}
+.logo-name{font-family:var(--fd);font-size:22px;letter-spacing:3px;line-height:1}
+.logo-sub{font-family:var(--fm);font-size:7.5px;color:var(--blue);letter-spacing:4px;margin-top:1px}
+.hdr-r{display:flex;align-items:center;gap:14px}
+.live-pill{display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:9px;color:var(--green);letter-spacing:2px;background:var(--gdim);border:1px solid rgba(0,230,118,.3);padding:4px 12px;border-radius:20px}
+.live-pill::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hdr-date{font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:1px}
+#saveInd{font-family:var(--fm);font-size:9px;color:var(--dim);letter-spacing:1px;transition:color .4s}
+#saveInd.on{color:var(--green)}
+
+/* NAV */
+nav{background:var(--deep);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;position:sticky;top:56px;z-index:200}
+nav::-webkit-scrollbar{display:none}
+.tbtn{padding:12px 15px;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:all .15s}
+.tbtn:hover{color:var(--text);background:rgba(45,140,255,.04)}
+.tbtn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.ndot{width:7px;height:7px;background:var(--red);border-radius:50%;display:none}
+.ndot.show{display:inline-block;animation:blink 1.4s infinite}
+
+/* MAIN */
+main{padding:22px;max-width:1400px;margin:0 auto}
+.tab{display:none;animation:fu .2s ease}.tab.active{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.gmain{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+@media(max-width:900px){.g2,.g3,.g4,.gmain{grid-template-columns:1fr}}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.card.glow{border-color:var(--blue3);box-shadow:0 0 20px rgba(45,140,255,.07)}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap}
+.ct{font-family:var(--fm);font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted)}
+.divider{height:1px;background:var(--border);margin:14px 0}
+
+/* BADGES */
+.badge{font-family:var(--fm);font-size:7.5px;padding:2px 8px;border-radius:3px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.bb{background:var(--bglow);color:var(--blue);border:1px solid var(--blue3)}
+.bc{background:var(--cglow);color:var(--cyan)}
+.bg{background:var(--gdim);color:var(--green)}
+.by{background:var(--ydim);color:var(--yellow)}
+.br{background:var(--rdim);color:var(--red)}
+.bp{background:var(--pdim);color:var(--purple)}
+
+/* SECTION */
+.sh{font-family:var(--fd);font-size:30px;letter-spacing:3px;margin-bottom:2px}
+.ss{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:20px}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:6px;border:none;font-family:var(--fm);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:var(--blue2);box-shadow:0 0 14px var(--bglow)}
+.btn-g{background:none;border:1px solid var(--border2);color:var(--muted)}.btn-g:hover{border-color:var(--blue);color:var(--blue)}
+.btn-r{background:var(--rdim);border:1px solid rgba(255,77,106,.3);color:var(--red)}.btn-r:hover{background:var(--red);color:#fff}
+.btn-sm{padding:4px 10px;font-size:8px}.btn-xs{padding:2px 7px;font-size:7.5px}
+
+/* FORMS */
+input,select,textarea{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:8px 11px;color:var(--text);font-family:var(--fm);font-size:11px;outline:none;transition:border-color .2s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(45,140,255,.1)}
+input::placeholder,textarea::placeholder{color:var(--dim)}
+select option{background:var(--card2)}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;animation:fu .2s ease;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.mhd{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mhd h3{font-family:var(--fd);font-size:22px;letter-spacing:3px;color:var(--blue)}
+.mclose{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 8px;transition:color .2s}.mclose:hover{color:var(--text)}
+.mbody{padding:20px}
+.mfoot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-family:var(--fm);font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(45,140,255,.02)}
+.tbl td.mono{font-family:var(--fm);font-size:10px}
+
+/* PROGRESS */
+.ptrack{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.pfill{height:100%;border-radius:2px;background:var(--blue);transition:width 1s ease}
+.pfill.g{background:var(--green)}.pfill.y{background:var(--yellow)}
+
+/* STAT */
+.snum{font-family:var(--fd);font-size:44px;line-height:1}
+.slbl{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:5px}
+
+/* REV HERO */
+.rev-hero{background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:28px;text-align:center;position:relative;overflow:hidden;margin-bottom:18px}
+.rev-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 110%,var(--bglow),transparent);pointer-events:none}
+.rev-big{font-family:var(--fd);font-size:76px;line-height:1}
+.big-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:18px 0 6px}
+.big-fill{height:100%;background:linear-gradient(90deg,var(--blue3),var(--blue),var(--cyan));border-radius:4px;transition:width 1.2s ease}
+
+/* PRODUCT ROW */
+.prod-row{display:grid;grid-template-columns:10px 1fr auto 130px 56px 56px;gap:10px;align-items:center;padding:10px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:7px;background:var(--panel);transition:border-color .2s}
+.prod-row:hover{border-color:var(--border2)}
+.pdot{width:8px;height:8px;border-radius:50%}
+.pname{font-family:var(--fm);font-size:11px;font-weight:500}
+.pprice{font-family:var(--fm);font-size:9.5px;color:var(--muted)}
+
+/* TIMELINE */
+.tl-item{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--border)}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:2px}
+.tl-q{font-family:var(--fm);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:3px}
+.tl-title{font-size:13px;font-weight:600;margin-bottom:5px}
+.tl-tags{display:flex;gap:4px;flex-wrap:wrap}
+.tl-tag{font-family:var(--fm);font-size:7.5px;padding:2px 6px;border-radius:3px;background:var(--border);color:var(--muted)}
+
+/* SUBSCRIBER */
+.sub-row{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:10px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:7px;background:var(--panel);transition:border-color .2s}
+.sub-row:hover{border-color:var(--border2)}
+.sub-name{font-family:var(--fm);font-size:11px;font-weight:500}
+.sub-detail{font-family:var(--fm);font-size:9px;color:var(--muted);margin-top:2px}
+
+/* BOARD POST */
+.post{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;transition:border-color .2s}
+.post:hover{border-color:var(--border2)}
+.post.pinned{border-left:3px solid var(--blue);box-shadow:inset 4px 0 20px rgba(45,140,255,.05)}
+.post-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.post-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.post-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:12px;flex-shrink:0}
+.post-author{font-family:var(--fm);font-size:10px;font-weight:600}
+.post-time{font-family:var(--fm);font-size:8.5px;color:var(--muted)}
+.post-title{font-family:var(--ff);font-size:16px;font-weight:700;margin-bottom:8px;line-height:1.35}
+.post-body{font-size:13px;color:var(--muted);line-height:1.7;font-family:var(--ff);font-weight:400}
+.post-foot{margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.react-btn{background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);padding:4px 10px;cursor:pointer;transition:all .15s;font-family:var(--fm);font-size:9px;display:flex;align-items:center;gap:5px}
+.react-btn:hover,.react-btn.on{border-color:var(--blue);color:var(--blue);background:var(--bglow2)}
+
+/* CHAT */
+.chat-wrap{display:flex;height:calc(100vh - 200px);min-height:520px;border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 0 40px rgba(45,140,255,.05)}
+.chat-sidebar{width:220px;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;background:var(--panel)}
+.chat-sb-hd{padding:14px 16px;border-bottom:1px solid var(--border);font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.chat-ch{padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;border-bottom:1px solid var(--border);border-left:3px solid transparent}
+.chat-ch:hover{background:rgba(45,140,255,.05)}
+.chat-ch.active{background:rgba(45,140,255,.09);border-left-color:var(--blue)}
+.cav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:12px;flex-shrink:0}
+.ch-name-s{font-family:var(--fm);font-size:10px;font-weight:600}
+.ch-prev{font-family:var(--fm);font-size:8.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.chat-unread{min-width:18px;height:18px;background:var(--blue);border-radius:9px;font-family:var(--fm);font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;margin-left:auto;padding:0 4px}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--card)}
+.chat-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--panel)}
+.chat-hd-name{font-family:var(--fm);font-size:11px;font-weight:600}
+.chat-online{font-family:var(--fm);font-size:8px;color:var(--green);display:flex;align-items:center;gap:4px}
+.chat-online::before{content:'';width:5px;height:5px;background:var(--green);border-radius:50%}
+.chat-msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.cmsg{display:flex;gap:10px;align-items:flex-end;max-width:80%}
+.cmsg.mine{flex-direction:row-reverse;align-self:flex-end}
+.cmsg-bub{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:9px 13px}
+.cmsg.mine .cmsg-bub{background:var(--bglow2);border-color:var(--blue3)}
+.cmsg-who{font-family:var(--fm);font-size:8px;color:var(--muted);margin-bottom:4px}
+.cmsg-txt{font-size:13px;line-height:1.5;word-break:break-word;font-family:var(--ff);font-weight:400}
+.cmsg-ts{font-family:var(--fm);font-size:7.5px;color:var(--dim);margin-top:4px}
+.chat-input{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;background:var(--panel)}
+.chat-input input{flex:1}
+.who-pick{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:var(--fm);font-size:10px;color:var(--text);cursor:pointer;width:auto;flex-shrink:0}
+.send-btn{background:var(--blue);border:none;border-radius:6px;width:36px;height:36px;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;transition:background .2s;display:flex;align-items:center;justify-content:center}
+.send-btn:hover{background:var(--blue2)}
+
+/* PITCH */
+.pitch{background:linear-gradient(135deg,var(--panel),var(--card));border:1px solid var(--border2);border-radius:12px;padding:24px;position:relative;overflow:hidden;margin-bottom:18px}
+.pitch::before{content:'';position:absolute;top:0;right:0;width:200px;height:200px;background:radial-gradient(circle,rgba(45,140,255,.08),transparent);pointer-events:none}
+.pitch p{font-size:15px;line-height:1.8;font-weight:400}
+.pitch strong{color:var(--blue);font-weight:700}
+
+/* PLINK */
+.plink{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:all .2s;margin-bottom:8px}
+.plink:hover{border-color:var(--blue);box-shadow:0 0 14px rgba(45,140,255,.07)}
+.plink-ico{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.plink-name{font-family:var(--fm);font-size:11px;font-weight:600}
+.plink-url{font-family:var(--fm);font-size:8.5px;color:var(--muted);margin-top:2px}
+
+/* TRANCHE */
+.tranche{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:border-color .2s}
+.tranche:hover{border-color:var(--border2)}
+
+/* GRANT ROW */
+.grant-row{display:grid;grid-template-columns:1fr 95px 80px 58px;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+.grant-row:last-child{border-bottom:none}
+
+/* MILESTONE */
+.ms{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.ms:last-child{border-bottom:none}
+.ms-box{width:18px;height:18px;border:2px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;transition:all .2s;margin-top:2px}
+.ms.done .ms-box{background:var(--blue);border-color:var(--blue);color:#fff}
+.ms-txt{font-size:13px;line-height:1.5;flex:1}
+.ms.done .ms-txt{text-decoration:line-through;color:var(--muted)}
+
+/* ALERT */
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start}
+.alert-b{background:var(--bglow2);border:1px solid var(--blue3)}
+.alert-g{background:var(--gdim);border:1px solid rgba(0,230,118,.3)}
+.alert-txt{font-family:var(--fm);font-size:10px;line-height:1.7}
+
+/* EMPTY / FILTER */
+.empty{font-family:var(--fm);font-size:10px;color:var(--dim);padding:24px;text-align:center;border:1px dashed var(--border);border-radius:8px}
+.filter-btn{padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--muted);font-family:var(--fm);font-size:8.5px;cursor:pointer;transition:all .15s;letter-spacing:1px}
+.filter-btn:hover{border-color:var(--blue);color:var(--blue)}
+.filter-btn.active{background:var(--bglow2);border-color:var(--blue);color:var(--blue)}
+
+/* SPINNER */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-hex"><span>AK</span></div>
+    <div>
+      <div class="logo-name">ALLIE-KAT</div>
+      <div class="logo-sub">Command Center · v2</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <span id="saveInd">● SYNCED</span>
+    <div class="live-pill">LIVE</div>
+    <div class="hdr-date" id="liveDate"></div>
+  </div>
+</header>
+
+<nav>
+  <button class="tbtn active" onclick="goTab('overview')" data-t="overview">⬡ Overview</button>
+  <button class="tbtn" onclick="goTab('revenue')" data-t="revenue">◈ Revenue</button>
+  <button class="tbtn" onclick="goTab('products')" data-t="products">◧ Products</button>
+  <button class="tbtn" onclick="goTab('roadmap')" data-t="roadmap">↝ Roadmap</button>
+  <button class="tbtn" onclick="goTab('funding')" data-t="funding">◎ Funding</button>
+  <button class="tbtn" onclick="goTab('subscribers')" data-t="subscribers">◉ Subscribers</button>
+  <button class="tbtn" onclick="goTab('board')" data-t="board">▦ Updates Board <span class="ndot" id="board-dot"></span></button>
+  <button class="tbtn" onclick="goTab('messages')" data-t="messages">✉ Messages <span class="ndot" id="msg-dot"></span></button>
+</nav>
+
+<main>
+
+<!-- OVERVIEW -->
+<div class="tab active" id="tab-overview">
+  <div class="sh">MISSION CONTROL</div>
+  <div class="ss">Allie-Kat Automations · Founders HQ</div>
+  <div class="pitch"><p>"<strong>Allie-Kat Automations</strong> builds <strong>Allie OS</strong> — a vehicle intelligence platform connecting hardware, software, and AI across the transportation industry — powered by the <strong>only dataset built by mechanics from real-world confirmed repairs.</strong>"</p></div>
+  <div class="g4" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">MRR Trigger</div><div class="badge bb">Target</div></div><div class="snum" style="color:var(--blue)">$20K</div><div class="slbl">× 2 months = leave 9-5s</div></div>
+    <div class="card"><div class="ch"><div class="ct">Equity Split</div><div class="badge bc">50/50</div></div><div style="height:8px;border-radius:4px;overflow:hidden;display:flex;margin:8px 0"><div style="width:50%;background:var(--blue)"></div><div style="width:50%;background:var(--cyan)"></div></div><div style="display:flex;gap:14px"><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">🔵 Mike</span><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">🩵 Clay</span></div></div>
+    <div class="card"><div class="ch"><div class="ct">Mike</div><div class="badge bg">Founder</div></div><div class="snum">22</div><div class="slbl">Yrs in industry</div></div>
+    <div class="card"><div class="ch"><div class="ct">Clay</div><div class="badge bb">Future CTO</div></div><div class="snum">18</div><div class="slbl">Yrs as master tech</div></div>
+  </div>
+  <div class="gmain">
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="ch"><div class="ct">Live Platforms</div></div>
+        <a class="plink" href="https://spontaneous-praline-d5735a.netlify.app" target="_blank"><div class="plink-ico" style="background:var(--bglow2)">🔧</div><div><div class="plink-name">Allie-Kat Diagnostics</div><div class="plink-url">spontaneous-praline-d5735a.netlify.app</div></div><div style="margin-left:auto;color:var(--blue)">→</div></a>
+        <a class="plink" href="https://midwest-shop.onrender.com" target="_blank"><div class="plink-ico" style="background:var(--bglow2)">🚛</div><div><div class="plink-name">Shop App — Midwest Trucking</div><div class="plink-url">midwest-shop.onrender.com</div></div><div style="margin-left:auto;color:var(--blue)">→</div></a>
+        <a class="plink" href="#" onclick="return false"><div class="plink-ico" style="background:var(--bglow2)">📡</div><div><div class="plink-name">Allie OS</div><div class="plink-url">In development</div></div><div class="badge by" style="margin-left:auto">Soon</div></a>
+      </div>
+      <div class="card glow">
+        <div class="ch"><div class="ct">First Call</div><div class="badge by">Action Item</div></div>
+        <div style="font-size:14px;margin-bottom:4px;font-weight:600">📞 Texas SBDC Lubbock</div>
+        <div style="font-family:var(--fd);font-size:32px;color:var(--blue)">806-745-3973</div>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--muted);margin-top:5px">Free consulting · Grant roadmap</div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:14px"><div class="ch"><div class="ct">Roadmap Progress</div></div><div id="ov-milestones"></div></div>
+      <div class="card glow"><div class="ch"><div class="ct">🚌 Bus Safety</div><div class="badge bb">Priority</div></div>
+        <div class="g2" style="gap:10px;margin-top:4px">
+          <div><div class="snum" style="color:var(--blue);font-size:36px">144</div><div class="slbl">Sensors/bus</div></div>
+          <div><div class="snum" style="font-size:36px">$7K</div><div class="slbl">R&D needed</div></div>
+        </div>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--muted);margin-top:10px;line-height:1.7">"No Child Ever Missed"<br>Patent + TM — FILE PENDING</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REVENUE -->
+<div class="tab" id="tab-revenue">
+  <div class="sh">REVENUE TRACKER</div>
+  <div class="ss">Monthly Recurring Revenue · $20K Leave-Day Trigger</div>
+  <div class="rev-hero">
+    <div style="font-family:var(--fm);font-size:9px;color:var(--blue);letter-spacing:4px;margin-bottom:6px">◉ CURRENT MRR</div>
+    <div class="rev-big" id="mrrDisplay">$0</div>
+    <div style="font-family:var(--fm);font-size:10px;color:var(--muted);margin-top:6px">Target: <strong style="color:var(--blue)">$20,000/mo × 2 consecutive months</strong> → Leave 9-5s</div>
+    <div class="big-track"><div class="big-fill" id="mrrFill" style="width:0%"></div></div>
+    <div style="font-family:var(--fd);font-size:26px;color:var(--blue);text-align:right" id="mrrPct">0%</div>
+  </div>
+  <div class="g3" style="margin-bottom:18px">
+    <div class="card">
+      <div class="ch"><div class="ct">Log MRR</div></div>
+      <div class="fg"><label>Amount ($)</label><input type="number" id="mrrIn" placeholder="e.g. 4500" min="0"></div>
+      <div class="fg"><label>Month</label><input type="month" id="mrrMonth"></div>
+      <button class="btn btn-p" style="width:100%" onclick="logMRR()">💾 Save MRR</button>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">Months at $20K+</div><div class="badge bb">Need 2</div></div>
+      <div class="snum" id="monthsAt" style="color:var(--blue)">0</div><div class="slbl">/ 2 consecutive</div>
+      <div class="divider"></div>
+      <div class="ct" style="margin-bottom:6px">Gap to Trigger</div>
+      <div style="font-family:var(--fd);font-size:28px" id="gapDisplay">$20,000</div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">Bootstrap Rule</div></div>
+      <div class="alert alert-b" style="margin:0"><div>🔒</div><div class="alert-txt">No outside investment unless absolutely necessary. Family tranches ~$3,500 each for R&D bridge only.</div></div>
+    </div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">MRR History</div><button class="btn btn-r btn-sm" onclick="clearMRR()">Clear All</button></div><div id="mrr-history"></div></div>
+</div>
+
+<!-- PRODUCTS -->
+<div class="tab" id="tab-products">
+  <div class="sh">PRODUCT STATUS</div>
+  <div class="ss">Edit status, price, or notes on any product</div>
+  <div class="g2">
+    <div>
+      <div style="font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:10px">◧ Professional Division</div>
+      <div id="prod-pro"></div>
+    </div>
+    <div>
+      <div style="font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:10px">◧ Recreational Division</div>
+      <div id="prod-rec"></div>
+      <div style="font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin:16px 0 10px">◧ Innovations / Software</div>
+      <div id="prod-sw"></div>
+    </div>
+  </div>
+  <div style="margin-top:14px"><button class="btn btn-p" id="add-prod-btn">+ Add Product</button></div>
+  <div class="divider"></div>
+  <div class="card glow">
+    <div class="ch"><div class="ct">🚌 Bus Safety — "No Child Ever Missed"</div><div class="badge bb">Priority</div></div>
+    <div class="g3" style="margin-top:6px">
+      <div><div class="snum" style="color:var(--blue);font-size:36px">144</div><div class="slbl">FSR sensors/bus</div></div>
+      <div><div class="snum" style="font-size:36px">$2,500</div><div class="slbl">Demo bus cost</div></div>
+      <div><div class="snum" style="font-size:36px">$7,000</div><div class="slbl">Total R&D</div></div>
+    </div>
+    <div class="alert alert-b" style="margin-top:14px;margin-bottom:0"><div>⚠️</div><div class="alert-txt">Patent + Trademark "No Child Ever Missed" — FILE PENDING. Passive FSR, no driver action required.</div></div>
+  </div>
+</div>
+
+<!-- ROADMAP -->
+<div class="tab" id="tab-roadmap">
+  <div class="sh">12-MONTH ROADMAP</div>
+  <div class="ss">Click Done to mark complete · Edit or delete any milestone</div>
+  <div class="gmain">
+    <div class="card"><div class="ch"><div class="ct">Milestones</div><button class="btn btn-p btn-sm" id="add-road-btn">+ Add</button></div><div id="roadmap-list"></div></div>
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="ct">Allie-Kat Core Stack</div></div>
+        <div style="font-family:var(--fm);font-size:10px;line-height:2.8">
+          <span style="color:var(--blue)">🧠</span> <span>Allie AI</span><br>
+          <span style="color:var(--dim);padding-left:12px">↓</span><br>
+          <span style="color:var(--blue)">💻</span> <span>Allie OS</span><br>
+          <span style="color:var(--dim);padding-left:12px">↓</span><br>
+          <span style="color:var(--blue)">📦</span> <span>Allie Box (Hardware)</span><br>
+          <span style="color:var(--dim);padding-left:12px">↓</span><br>
+          <span style="color:var(--blue)">🚗</span> <span>Vehicle (CAN + Sensors)</span><br>
+          <span style="color:var(--dim);padding-left:12px">↓</span><br>
+          <span style="color:var(--blue)">📱</span> <span>Packages → App</span><br>
+          <span style="color:var(--cyan);padding-left:12px">↺ Data Loop</span>
+        </div>
+      </div>
+      <div class="card"><div class="ch"><div class="ct">Real Moat</div><div class="badge bb">Strategy</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          <div style="font-family:var(--fm);font-size:10px;color:var(--green)">✓ OS + Data + AI Layer</div>
+          <div style="font-family:var(--fm);font-size:10px;color:var(--green)">✓ Ecosystem Lock-in</div>
+          <div style="font-family:var(--fm);font-size:10px;color:var(--green)">✓ Real-World Mechanic Data</div>
+          <div style="font-family:var(--fm);font-size:10px;color:var(--blue)">→ First sellable: Diagnostics SaaS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FUNDING -->
+<div class="tab" id="tab-funding">
+  <div class="sh">FUNDING ROADMAP</div>
+  <div class="ss">Bootstrap-First · Family Bridge · Grant Pipeline</div>
+  <div class="alert alert-g"><div>✅</div><div class="alert-txt"><strong>Bootstrap Priority:</strong> No debt. No outside investment unless absolutely necessary. Build to revenue first.</div></div>
+  <div class="g2" style="margin-bottom:16px">
+    <div><div class="ch" style="margin-bottom:10px"><div class="ct">Family Tranches (Mike's Dad)</div><button class="btn btn-p btn-sm" id="add-tranche-btn">+ Add</button></div><div id="tranche-list"></div></div>
+    <div class="card"><div class="ch"><div class="ct">R&D Needs</div><div class="badge bb">~$16K Total</div></div><div id="rd-needs"></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">Grant Pipeline</div><button class="btn btn-p btn-sm" id="add-grant-btn">+ Add Grant</button></div><div id="grant-list"></div></div>
+</div>
+
+<!-- SUBSCRIBERS -->
+<div class="tab" id="tab-subscribers">
+  <div class="sh">SUBSCRIBERS & CLIENTS</div>
+  <div class="ss">Track paying customers and prospects across all products</div>
+  <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+    <button class="btn btn-p" onclick="openSubModal('diagnostics')">+ Diagnostics Sub</button>
+    <button class="btn btn-g" onclick="openSubModal('shop')">+ Shop Client</button>
+    <button class="btn btn-g" onclick="openSubModal('bussafety')">+ Bus Safety Lead</button>
+    <button class="btn btn-g" onclick="openSubModal('paying')">+ Paying Customer</button>
+  </div>
+  <div class="g4" style="margin-bottom:18px" id="sub-stats"></div>
+  <div class="g2">
+    <div>
+      <div style="font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">🔧 Diagnostics<span id="diag-count" class="badge bb">0</span></div>
+      <div id="sub-diagnostics"></div>
+      <div style="font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin:16px 0 10px;display:flex;align-items:center;justify-content:space-between">🚛 Shop App Clients<span id="shop-count" class="badge bb">0</span></div>
+      <div id="sub-shop"></div>
+    </div>
+    <div>
+      <div style="font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">🚌 Bus Safety Leads<span id="bus-count" class="badge by">0</span></div>
+      <div id="sub-bussafety"></div>
+      <div style="font-family:var(--fm);font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin:16px 0 10px;display:flex;align-items:center;justify-content:space-between">💰 Paying Customers<span id="pay-count" class="badge bg">0</span></div>
+      <div id="sub-paying"></div>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATES BOARD -->
+<div class="tab" id="tab-board">
+  <div class="sh">UPDATES BOARD</div>
+  <div class="ss">Company announcements · Progress updates · Shared notes</div>
+  <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap">
+    <button class="btn btn-p" id="new-post-btn">✏️ Post Update</button>
+    <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
+      <button class="filter-btn active" onclick="filterBoard('all',this)">All</button>
+      <button class="filter-btn" onclick="filterBoard('milestone',this)">🏁 Milestone</button>
+      <button class="filter-btn" onclick="filterBoard('revenue',this)">💰 Revenue</button>
+      <button class="filter-btn" onclick="filterBoard('product',this)">🔧 Product</button>
+      <button class="filter-btn" onclick="filterBoard('note',this)">📝 Note</button>
+      <button class="filter-btn" onclick="filterBoard('alert',this)">⚠️ Alert</button>
+    </div>
+  </div>
+  <div id="board-posts"></div>
+</div>
+
+<!-- MESSAGES -->
+<div class="tab" id="tab-messages">
+  <div class="sh">MESSAGES</div>
+  <div class="ss">Real-time · Mike ↔ Clay · Private channels</div>
+  <div class="chat-wrap">
+    <div class="chat-sidebar">
+      <div class="chat-sb-hd">Channels</div>
+      <div class="chat-ch active" onclick="setChannel('founders',this)">
+        <div class="cav" style="background:var(--bglow2);color:var(--blue)">MC</div>
+        <div style="min-width:0"><div class="ch-name-s">Mike + Clay</div><div class="ch-prev" id="prev-founders">Founders channel</div></div>
+      </div>
+      <div class="chat-ch" onclick="setChannel('mike',this)">
+        <div class="cav" style="background:var(--bglow2);color:var(--blue)">M</div>
+        <div style="min-width:0"><div class="ch-name-s">Mike's Notes</div><div class="ch-prev" id="prev-mike">Personal notes</div></div>
+      </div>
+      <div class="chat-ch" onclick="setChannel('clay',this)">
+        <div class="cav" style="background:var(--cglow);color:var(--cyan)">C</div>
+        <div style="min-width:0"><div class="ch-name-s">Clay's Notes</div><div class="ch-prev" id="prev-clay">Personal notes</div></div>
+      </div>
+    </div>
+    <div class="chat-main">
+      <div class="chat-hd">
+        <div class="cav" id="ch-av" style="background:var(--bglow2);color:var(--blue);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:11px">MC</div>
+        <div><div class="chat-hd-name" id="ch-name">Mike + Clay</div><div class="chat-online">Online</div></div>
+        <div style="margin-left:auto;font-family:var(--fm);font-size:9px;color:var(--muted)" id="ch-count"></div>
+      </div>
+      <div class="chat-msgs" id="chat-msgs"><div style="text-align:center;padding:30px"><div class="spin"></div></div></div>
+      <div class="chat-input">
+        <select class="who-pick" id="chat-who"><option value="Mike">Mike</option><option value="Clay">Clay</option></select>
+        <input type="text" id="chat-in" placeholder="Message..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="send-btn" onclick="sendChat()">→</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- MODALS -->
+<div class="overlay" id="prod-modal">
+  <div class="modal">
+    <div class="mhd"><h3 id="prod-modal-title">PRODUCT</h3><button class="mclose" onclick="closeModal('prod-modal')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="prod-edit-id">
+      <div class="fg"><label>Product Name</label><input id="pm-name" placeholder="e.g. Elite Package"></div>
+      <div class="fg"><label>Price / Range</label><input id="pm-price" placeholder="e.g. $1,299"></div>
+      <div class="fg"><label>Division</label><select id="pm-division"><option value="pro">Professional</option><option value="rec">Recreational</option><option value="sw">Software / Innovations</option></select></div>
+      <div class="fg"><label>Status</label><select id="pm-status"><option value="active">Active</option><option value="live">Live</option><option value="rd">R&D</option><option value="dev">In Dev</option><option value="planned">Planned</option><option value="beta">Beta</option><option value="paused">Paused</option></select></div>
+      <div class="fg"><label>Notes</label><textarea id="pm-notes" rows="2" placeholder="Any extra detail..."></textarea></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-g" onclick="closeModal('prod-modal')">Cancel</button><button class="btn btn-p" onclick="saveProduct()">💾 Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="road-modal">
+  <div class="modal">
+    <div class="mhd"><h3 id="road-modal-title">MILESTONE</h3><button class="mclose" onclick="closeModal('road-modal')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="road-edit-id">
+      <div class="fg"><label>Quarter / Period</label><input id="rm-q" placeholder="e.g. Q3 2025"></div>
+      <div class="fg"><label>Title</label><input id="rm-title" placeholder="e.g. First paying customer"></div>
+      <div class="fg"><label>Tags (comma-separated)</label><input id="rm-tags" placeholder="e.g. Revenue, SaaS"></div>
+      <div class="fg"><label>Status</label><select id="rm-status"><option value="pending">Pending</option><option value="inprogress">In Progress</option><option value="done">Complete</option></select></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-g" onclick="closeModal('road-modal')">Cancel</button><button class="btn btn-p" onclick="saveMilestone()">💾 Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="tranche-modal">
+  <div class="modal">
+    <div class="mhd"><h3 id="tranche-modal-title">TRANCHE</h3><button class="mclose" onclick="closeModal('tranche-modal')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="tranche-edit-id">
+      <div class="fg"><label>Label</label><input id="tm-label" placeholder="e.g. Tranche 1"></div>
+      <div class="fg"><label>Amount</label><input id="tm-amount" placeholder="e.g. $3,500"></div>
+      <div class="fg"><label>Purpose</label><input id="tm-use" placeholder="e.g. Bus Safety demo components"></div>
+      <div class="fg"><label>Status</label><select id="tm-status"><option value="pending">Pending</option><option value="received">Received</option><option value="spent">Spent</option></select></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-g" onclick="closeModal('tranche-modal')">Cancel</button><button class="btn btn-p" onclick="saveTranche()">💾 Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="grant-modal">
+  <div class="modal">
+    <div class="mhd"><h3 id="grant-modal-title">GRANT</h3><button class="mclose" onclick="closeModal('grant-modal')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="grant-edit-id">
+      <div class="fg"><label>Grant Name</label><input id="gm-name" placeholder="e.g. NSF SBIR Phase I"></div>
+      <div class="fg"><label>Organization</label><input id="gm-org" placeholder="e.g. National Science Foundation"></div>
+      <div class="fg"><label>Amount</label><input id="gm-amount" placeholder="e.g. $275,000"></div>
+      <div class="fg"><label>Status</label><select id="gm-status"><option value="research">Research</option><option value="applying">Applying</option><option value="submitted">Submitted</option><option value="awarded">Awarded</option><option value="declined">Declined</option></select></div>
+      <div class="fg"><label>Notes</label><textarea id="gm-notes" rows="2" placeholder="Lead, deadline, notes..."></textarea></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-g" onclick="closeModal('grant-modal')">Cancel</button><button class="btn btn-p" onclick="saveGrant()">💾 Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="sub-modal">
+  <div class="modal">
+    <div class="mhd"><h3 id="sub-modal-title">SUBSCRIBER</h3><button class="mclose" onclick="closeModal('sub-modal')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="sub-edit-id">
+      <input type="hidden" id="sub-type-in">
+      <div class="fg"><label>Name / Company</label><input id="sm-name" placeholder="e.g. Midwest Trucking"></div>
+      <div class="fg"><label>Contact</label><input id="sm-contact" placeholder="e.g. John Smith — john@email.com"></div>
+      <div class="fg"><label>Plan / Tier</label><input id="sm-plan" placeholder="e.g. Pro Monthly"></div>
+      <div class="fg"><label>Monthly Value ($)</label><input type="number" id="sm-mrr" placeholder="0" min="0"></div>
+      <div class="fg"><label>Status</label><select id="sm-status"><option value="active">Active</option><option value="trial">Trial</option><option value="lead">Lead</option><option value="prospect">Prospect</option><option value="churned">Churned</option></select></div>
+      <div class="fg"><label>Notes</label><textarea id="sm-notes" rows="2" placeholder="Any context..."></textarea></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-g" onclick="closeModal('sub-modal')">Cancel</button><button class="btn btn-p" onclick="saveSubscriber()">💾 Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="post-modal">
+  <div class="modal">
+    <div class="mhd"><h3>POST UPDATE</h3><button class="mclose" onclick="closeModal('post-modal')">✕</button></div>
+    <div class="mbody">
+      <div class="fg"><label>Author</label><select id="post-author"><option value="Mike">Mike</option><option value="Clay">Clay</option></select></div>
+      <div class="fg"><label>Category</label><select id="post-cat"><option value="milestone">🏁 Milestone</option><option value="revenue">💰 Revenue</option><option value="product">🔧 Product</option><option value="note">📝 Note</option><option value="alert">⚠️ Alert</option></select></div>
+      <div class="fg"><label>Title</label><input id="post-title" placeholder="Short headline..."></div>
+      <div class="fg"><label>Body</label><textarea id="post-body" rows="4" placeholder="Write your update..."></textarea></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><input type="checkbox" id="post-pin" style="width:auto"><label style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin:0">📌 Pin to top</label></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-g" onclick="closeModal('post-modal')">Cancel</button><button class="btn btn-p" onclick="savePost()">📢 Post</button></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIG — swap these two lines with your real values
+// ══════════════════════════════════════════════
+const BACKEND = 'https://YOUR-RENDER-APP.onrender.com'; // ← your Render URL
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co'; // ← your Supabase URL
+const SUPABASE_ANON = 'your-supabase-anon-key';          // ← anon/public key (for realtime only)
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── API HELPER ──
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(BACKEND + path, opts);
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'API error'); }
+  return r.json();
+}
+const GET  = p       => api('GET',    p);
+const POST = (p, b)  => api('POST',   p, b);
+const PATCH= (p, b)  => api('PATCH',  p, b);
+const DEL  = p       => api('DELETE', p);
+
+function flash(msg='Saved', ok=true) {
+  const el = document.getElementById('saveInd');
+  el.textContent = (ok ? '● ' : '⚠ ') + msg;
+  el.classList.toggle('on', ok);
+  setTimeout(() => { el.textContent = '● SYNCED'; el.classList.remove('on'); }, 2000);
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+// ── DATE ──
+function updateDate() { document.getElementById('liveDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}).toUpperCase(); }
+updateDate(); setInterval(updateDate, 60000);
+document.getElementById('mrrMonth').value = new Date().toISOString().slice(0,7);
+
+// ── TABS ──
+function goTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  document.querySelector('[data-t="' + id + '"]').classList.add('active');
+  if (id === 'messages') { document.getElementById('msg-dot').classList.remove('show'); loadMessages(); }
+  if (id === 'board')    { document.getElementById('board-dot').classList.remove('show'); }
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); }));
+
+// ── STATUS COLORS ──
+const SC = { active:'bg',live:'bb',rd:'by',dev:'bp',planned:'bc',beta:'bb',paused:'br',done:'bg',inprogress:'bb',pending:'by',received:'bg',spent:'br',research:'by',applying:'bp',submitted:'bb',awarded:'bg',declined:'br',trial:'bb',lead:'by',prospect:'bp',churned:'br' };
+const SD = { active:'var(--green)',live:'var(--blue)',rd:'var(--yellow)',dev:'var(--purple)',planned:'var(--cyan)',beta:'var(--blue)',paused:'var(--red)',done:'var(--blue)',inprogress:'var(--cyan)',pending:'var(--dim)' };
+function bc(s) { return SC[s] || 'by'; }
+function dc(s) { return SD[s] || 'var(--muted)'; }
+function timeAgo(ts) { const d=Date.now()-new Date(ts).getTime(),m=Math.floor(d/60000),h=Math.floor(m/60),dd=Math.floor(h/24); return dd>0?dd+'d ago':h>0?h+'h ago':m>0?m+'m ago':'Just now'; }
+
+// ══════════════════════════════════════════════
+// PRODUCTS
+// ══════════════════════════════════════════════
+let products = [];
+async function loadProducts() {
+  products = await GET('/products');
+  renderProducts();
+}
+function renderProducts() {
+  const divs = { pro:'prod-pro', rec:'prod-rec', sw:'prod-sw' };
+  for (const [div, elId] of Object.entries(divs)) {
+    const el = document.getElementById(elId);
+    const items = products.filter(p => p.division === div);
+    if (!items.length) { el.innerHTML='<div class="empty">No products yet</div>'; continue; }
+    el.innerHTML = items.map(p => `
+      <div class="prod-row">
+        <div class="pdot" style="background:${dc(p.status)}"></div>
+        <div><div class="pname">${p.name}</div><div class="pprice">${p.price||''}</div></div>
+        <span class="badge ${bc(p.status)}">${p.status}</span>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.notes||''}</div>
+        <button class="btn btn-g btn-xs" onclick="editProduct('${p.id}')">Edit</button>
+        <button class="btn btn-r btn-xs" onclick="deleteProduct('${p.id}')">Del</button>
+      </div>`).join('');
+  }
+}
+document.getElementById('add-prod-btn').onclick = () => {
+  document.getElementById('prod-modal-title').textContent = 'ADD PRODUCT';
+  document.getElementById('prod-edit-id').value = '';
+  ['pm-name','pm-price','pm-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pm-status').value = 'active';
+  document.getElementById('pm-division').value = 'pro';
+  openModal('prod-modal');
+};
+function editProduct(id) {
+  const p = products.find(x => x.id === id); if (!p) return;
+  document.getElementById('prod-modal-title').textContent = 'EDIT PRODUCT';
+  document.getElementById('prod-edit-id').value = id;
+  document.getElementById('pm-name').value = p.name;
+  document.getElementById('pm-price').value = p.price || '';
+  document.getElementById('pm-division').value = p.division;
+  document.getElementById('pm-status').value = p.status;
+  document.getElementById('pm-notes').value = p.notes || '';
+  openModal('prod-modal');
+}
+async function saveProduct() {
+  const id = document.getElementById('prod-edit-id').value || uid();
+  const p = { id, name:document.getElementById('pm-name').value.trim(), price:document.getElementById('pm-price').value.trim(), division:document.getElementById('pm-division').value, status:document.getElementById('pm-status').value, notes:document.getElementById('pm-notes').value.trim() };
+  if (!p.name) return alert('Name required');
+  await POST('/products', p); flash('Product saved');
+  await loadProducts(); closeModal('prod-modal');
+}
+async function deleteProduct(id) {
+  if (!confirm('Delete product?')) return;
+  await DEL('/products/' + id); flash('Deleted');
+  await loadProducts();
+}
+
+// ══════════════════════════════════════════════
+// ROADMAP
+// ══════════════════════════════════════════════
+let roadmap = [];
+async function loadRoadmap() { roadmap = await GET('/roadmap'); renderRoadmap(); }
+function renderRoadmap() {
+  const el = document.getElementById('roadmap-list');
+  if (!roadmap.length) { el.innerHTML='<div class="empty">No milestones yet</div>'; return; }
+  el.innerHTML = roadmap.map(r => {
+    const tags = (r.tags||[]).map(t => `<span class="tl-tag">${t}</span>`).join('');
+    const dotBg = r.status==='done'?'var(--bglow2)':r.status==='inprogress'?'var(--cglow)':'var(--border)';
+    const dotCol = r.status==='done'?'var(--blue)':r.status==='inprogress'?'var(--cyan)':'var(--muted)';
+    const icon = r.status==='done'?'✓':r.status==='inprogress'?'…':'○';
+    return `<div class="tl-item">
+      <div class="tl-dot" style="background:${dotBg};color:${dotCol}">${icon}</div>
+      <div style="flex:1;min-width:0"><div class="tl-q">${r.q}</div><div class="tl-title">${r.title}</div><div class="tl-tags">${tags}</div></div>
+      <div style="display:flex;gap:5px;align-items:center;margin-left:10px;flex-shrink:0">
+        <button class="btn btn-g btn-xs" onclick="toggleRoad('${r.id}','${r.status}')">${r.status==='done'?'Undo':'Done'}</button>
+        <button class="btn btn-g btn-xs" onclick="editMilestone('${r.id}')">Edit</button>
+        <button class="btn btn-r btn-xs" onclick="deleteRoad('${r.id}')">Del</button>
+      </div></div>`;
+  }).join('');
+  renderOvMilestones();
+}
+async function toggleRoad(id, status) {
+  const newStatus = status === 'done' ? 'pending' : 'done';
+  await PATCH('/roadmap/' + id + '/status', { status: newStatus }); flash(newStatus==='done'?'Marked done':'Undone');
+  await loadRoadmap();
+}
+document.getElementById('add-road-btn').onclick = () => {
+  document.getElementById('road-modal-title').textContent = 'ADD MILESTONE';
+  document.getElementById('road-edit-id').value = '';
+  ['rm-q','rm-title','rm-tags'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('rm-status').value = 'pending';
+  openModal('road-modal');
+};
+function editMilestone(id) {
+  const r = roadmap.find(x => x.id === id); if (!r) return;
+  document.getElementById('road-modal-title').textContent = 'EDIT MILESTONE';
+  document.getElementById('road-edit-id').value = id;
+  document.getElementById('rm-q').value = r.q;
+  document.getElementById('rm-title').value = r.title;
+  document.getElementById('rm-tags').value = (r.tags||[]).join(', ');
+  document.getElementById('rm-status').value = r.status;
+  openModal('road-modal');
+}
+async function saveMilestone() {
+  const id = document.getElementById('road-edit-id').value || uid();
+  const tags = document.getElementById('rm-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const r = { id, q:document.getElementById('rm-q').value.trim(), title:document.getElementById('rm-title').value.trim(), tags, status:document.getElementById('rm-status').value };
+  if (!r.title) return alert('Title required');
+  await POST('/roadmap', r); flash('Milestone saved');
+  await loadRoadmap(); closeModal('road-modal');
+}
+async function deleteRoad(id) {
+  if (!confirm('Delete milestone?')) return;
+  await DEL('/roadmap/' + id); await loadRoadmap();
+}
+function renderOvMilestones() {
+  const el = document.getElementById('ov-milestones');
+  el.innerHTML = roadmap.slice(0,6).map(r => `
+    <div class="ms ${r.status==='done'?'done':''}" onclick="toggleRoad('${r.id}','${r.status}')">
+      <div class="ms-box">${r.status==='done'?'✓':''}</div>
+      <div class="ms-txt">${r.title}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// MRR
+// ══════════════════════════════════════════════
+let mrrData = [];
+async function loadMRR() { mrrData = await GET('/mrr'); renderMRR(); }
+function renderMRR() {
+  const sorted = [...mrrData].sort((a,b) => a.month.localeCompare(b.month));
+  const latest = sorted.length ? sorted[sorted.length-1].amount : 0;
+  const pct = Math.min(100, (latest/20000)*100);
+  const gap = Math.max(0, 20000-latest);
+  let consec = 0;
+  for (let i=sorted.length-1;i>=0;i--) { if (sorted[i].amount>=20000) consec++; else break; }
+  document.getElementById('mrrDisplay').textContent = '$' + latest.toLocaleString();
+  document.getElementById('mrrFill').style.width = pct + '%';
+  document.getElementById('mrrPct').textContent = pct.toFixed(1) + '%';
+  document.getElementById('gapDisplay').textContent = '$' + gap.toLocaleString();
+  document.getElementById('monthsAt').textContent = consec;
+  renderMRRHistory();
+}
+function renderMRRHistory() {
+  const el = document.getElementById('mrr-history');
+  const sorted = [...mrrData].sort((a,b)=>b.month.localeCompare(a.month));
+  if (!sorted.length) { el.innerHTML='<div class="empty">No MRR logged yet.</div>'; return; }
+  el.innerHTML = `<table class="tbl"><thead><tr><th>Month</th><th>MRR</th><th>Progress</th><th>Status</th><th></th></tr></thead><tbody>` +
+    sorted.map(m => {
+      const pct = Math.min(100,(m.amount/20000)*100); const hit = m.amount>=20000;
+      return `<tr><td class="mono">${m.month}</td>
+        <td><span style="font-family:var(--fd);font-size:18px">$${m.amount.toLocaleString()}</span></td>
+        <td style="min-width:120px"><div class="ptrack"><div class="pfill ${hit?'g':''}" style="width:${pct}%"></div></div><div style="font-family:var(--fm);font-size:8px;color:var(--muted);margin-top:3px">${pct.toFixed(0)}%</div></td>
+        <td><span class="badge ${hit?'bg':'by'}">${hit?'✓ Hit':'Below'}</span></td>
+        <td><button class="btn btn-r btn-xs" onclick="deleteMRR('${m.month}')">Del</button></td></tr>`;
+    }).join('') + '</tbody></table>';
+}
+async function logMRR() {
+  const amount = parseFloat(document.getElementById('mrrIn').value)||0;
+  const month = document.getElementById('mrrMonth').value;
+  if (!month) return alert('Select a month');
+  await POST('/mrr', { month, amount }); flash('MRR saved');
+  await loadMRR(); document.getElementById('mrrIn').value = '';
+}
+async function deleteMRR(month) {
+  if (!confirm('Delete MRR for ' + month + '?')) return;
+  await DEL('/mrr/' + month); await loadMRR();
+}
+async function clearMRR() {
+  if (!confirm('Delete ALL MRR history?')) return;
+  for (const m of mrrData) await DEL('/mrr/' + m.month);
+  await loadMRR();
+}
+
+// ══════════════════════════════════════════════
+// TRANCHES
+// ══════════════════════════════════════════════
+let tranches = [];
+async function loadTranches() { tranches = await GET('/tranches'); renderTranches(); }
+function renderTranches() {
+  const el = document.getElementById('tranche-list');
+  if (!tranches.length) { el.innerHTML='<div class="empty">No tranches added</div>'; return; }
+  el.innerHTML = tranches.map(t => `
+    <div class="tranche">
+      <div><div style="font-family:var(--fm);font-size:10px;color:var(--muted)">${t.label} <span class="badge ${t.status==='received'?'bg':t.status==='spent'?'br':'by'}">${t.status}</span></div><div style="font-family:var(--fm);font-size:8.5px;color:var(--dim);margin-top:2px">${t.use_for||''}</div></div>
+      <div style="text-align:right"><div style="font-family:var(--fd);font-size:20px">${t.amount}</div><div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end"><button class="btn btn-g btn-xs" onclick="editTranche('${t.id}')">Edit</button><button class="btn btn-r btn-xs" onclick="delTranche('${t.id}')">Del</button></div></div>
+    </div>`).join('');
+}
+document.getElementById('add-tranche-btn').onclick = () => {
+  document.getElementById('tranche-modal-title').textContent = 'ADD TRANCHE';
+  document.getElementById('tranche-edit-id').value = '';
+  ['tm-label','tm-amount','tm-use'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tm-status').value = 'pending';
+  openModal('tranche-modal');
+};
+function editTranche(id) {
+  const t = tranches.find(x=>x.id===id); if(!t) return;
+  document.getElementById('tranche-modal-title').textContent = 'EDIT TRANCHE';
+  document.getElementById('tranche-edit-id').value = id;
+  document.getElementById('tm-label').value = t.label;
+  document.getElementById('tm-amount').value = t.amount;
+  document.getElementById('tm-use').value = t.use_for||'';
+  document.getElementById('tm-status').value = t.status;
+  openModal('tranche-modal');
+}
+async function saveTranche() {
+  const id = document.getElementById('tranche-edit-id').value || uid();
+  const t = { id, label:document.getElementById('tm-label').value.trim(), amount:document.getElementById('tm-amount').value.trim(), use_for:document.getElementById('tm-use').value.trim(), status:document.getElementById('tm-status').value };
+  if(!t.label) return alert('Label required');
+  await POST('/tranches', t); flash('Tranche saved');
+  await loadTranches(); closeModal('tranche-modal');
+}
+async function delTranche(id) { if(!confirm('Delete?')) return; await DEL('/tranches/'+id); await loadTranches(); }
+
+function renderRDNeeds() {
+  document.getElementById('rd-needs').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)"><div><div style="font-family:var(--fm);font-size:10px;color:var(--muted)">Bus Safety System</div><div style="font-family:var(--fm);font-size:8.5px;color:var(--dim)">144 FSR sensors + demo bus</div></div><div style="font-family:var(--fd);font-size:20px">$7,000</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)"><div><div style="font-family:var(--fm);font-size:10px;color:var(--muted)">OTR Bench Test</div><div style="font-family:var(--fm);font-size:8.5px;color:var(--dim)">Full hardware validation</div></div><div style="font-family:var(--fd);font-size:20px">$9,000</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0 0"><div style="font-family:var(--fm);font-size:10px;font-weight:600">Total R&D Needed</div><div style="font-family:var(--fd);font-size:22px;color:var(--blue)">$16,000</div></div>`;
+}
+
+// ══════════════════════════════════════════════
+// GRANTS
+// ══════════════════════════════════════════════
+let grants = [];
+async function loadGrants() { grants = await GET('/grants'); renderGrants(); }
+function renderGrants() {
+  const el = document.getElementById('grant-list');
+  if (!grants.length) { el.innerHTML='<div class="empty">No grants added</div>'; return; }
+  el.innerHTML = `<div class="grant-row" style="border-bottom:1px solid var(--border2)"><div style="font-family:var(--fm);font-size:7.5px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Grant / Org</div><div style="font-family:var(--fm);font-size:7.5px;color:var(--muted)">Amount</div><div style="font-family:var(--fm);font-size:7.5px;color:var(--muted)">Status</div><div></div></div>` +
+    grants.map(g => `<div class="grant-row">
+      <div><div style="font-size:12px">${g.name}</div><div style="font-family:var(--fm);font-size:8.5px;color:var(--muted);margin-top:2px">${g.org||''}</div>${g.notes?`<div style="font-family:var(--fm);font-size:8px;color:var(--dim);margin-top:2px">${g.notes}</div>`:''}</div>
+      <div style="font-family:var(--fd);font-size:17px">${g.amount||''}</div>
+      <span class="badge ${bc(g.status)}">${g.status}</span>
+      <div style="display:flex;gap:4px"><button class="btn btn-g btn-xs" onclick="editGrant('${g.id}')">Edit</button><button class="btn btn-r btn-xs" onclick="delGrant('${g.id}')">Del</button></div>
+    </div>`).join('');
+}
+document.getElementById('add-grant-btn').onclick = () => {
+  document.getElementById('grant-modal-title').textContent='ADD GRANT';
+  document.getElementById('grant-edit-id').value='';
+  ['gm-name','gm-org','gm-amount','gm-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('gm-status').value='research';
+  openModal('grant-modal');
+};
+function editGrant(id) {
+  const g=grants.find(x=>x.id===id); if(!g) return;
+  document.getElementById('grant-modal-title').textContent='EDIT GRANT';
+  document.getElementById('grant-edit-id').value=id;
+  document.getElementById('gm-name').value=g.name;
+  document.getElementById('gm-org').value=g.org||'';
+  document.getElementById('gm-amount').value=g.amount||'';
+  document.getElementById('gm-status').value=g.status;
+  document.getElementById('gm-notes').value=g.notes||'';
+  openModal('grant-modal');
+}
+async function saveGrant() {
+  const id=document.getElementById('grant-edit-id').value||uid();
+  const g={id,name:document.getElementById('gm-name').value.trim(),org:document.getElementById('gm-org').value.trim(),amount:document.getElementById('gm-amount').value.trim(),status:document.getElementById('gm-status').value,notes:document.getElementById('gm-notes').value.trim()};
+  if(!g.name) return alert('Name required');
+  await POST('/grants',g); flash('Grant saved');
+  await loadGrants(); closeModal('grant-modal');
+}
+async function delGrant(id) { if(!confirm('Delete?')) return; await DEL('/grants/'+id); await loadGrants(); }
+
+// ══════════════════════════════════════════════
+// SUBSCRIBERS
+// ══════════════════════════════════════════════
+let subscribers = [];
+async function loadSubscribers() { subscribers = await GET('/subscribers'); renderSubscribers(); }
+function openSubModal(type) {
+  const labels={diagnostics:'DIAGNOSTICS SUB',shop:'SHOP CLIENT',bussafety:'BUS SAFETY LEAD',paying:'PAYING CUSTOMER'};
+  document.getElementById('sub-modal-title').textContent='ADD — '+labels[type];
+  document.getElementById('sub-type-in').value=type;
+  document.getElementById('sub-edit-id').value='';
+  ['sm-name','sm-contact','sm-plan','sm-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sm-mrr').value='0';
+  document.getElementById('sm-status').value='active';
+  openModal('sub-modal');
+}
+function editSubscriber(id) {
+  const s=subscribers.find(x=>x.id===id); if(!s) return;
+  const labels={diagnostics:'DIAGNOSTICS SUB',shop:'SHOP CLIENT',bussafety:'BUS SAFETY LEAD',paying:'PAYING CUSTOMER'};
+  document.getElementById('sub-modal-title').textContent='EDIT — '+labels[s.type];
+  document.getElementById('sub-type-in').value=s.type;
+  document.getElementById('sub-edit-id').value=id;
+  document.getElementById('sm-name').value=s.name;
+  document.getElementById('sm-contact').value=s.contact||'';
+  document.getElementById('sm-plan').value=s.plan||'';
+  document.getElementById('sm-mrr').value=s.mrr_value||0;
+  document.getElementById('sm-status').value=s.status;
+  document.getElementById('sm-notes').value=s.notes||'';
+  openModal('sub-modal');
+}
+async function saveSubscriber() {
+  const id=document.getElementById('sub-edit-id').value||uid();
+  const s={id,type:document.getElementById('sub-type-in').value,name:document.getElementById('sm-name').value.trim(),contact:document.getElementById('sm-contact').value.trim(),plan:document.getElementById('sm-plan').value.trim(),mrr_value:parseFloat(document.getElementById('sm-mrr').value)||0,status:document.getElementById('sm-status').value,notes:document.getElementById('sm-notes').value.trim()};
+  if(!s.name) return alert('Name required');
+  await POST('/subscribers',s); flash('Saved');
+  await loadSubscribers(); closeModal('sub-modal');
+}
+async function deleteSubscriber(id) { if(!confirm('Remove?')) return; await DEL('/subscribers/'+id); await loadSubscribers(); }
+function renderSubscribers() {
+  const types=['diagnostics','shop','bussafety','paying'];
+  const countIds={diagnostics:'diag-count',shop:'shop-count',bussafety:'bus-count',paying:'pay-count'};
+  let totalMRR=0;
+  for(const type of types) {
+    const subs=subscribers.filter(s=>s.type===type);
+    const cEl=document.getElementById(countIds[type]); if(cEl) cEl.textContent=subs.length;
+    totalMRR+=subs.reduce((a,s)=>a+(s.mrr_value||0),0);
+    const el=document.getElementById('sub-'+type); if(!el) continue;
+    if(!subs.length){el.innerHTML='<div class="empty">None added yet</div>';continue;}
+    el.innerHTML=subs.map(s=>`
+      <div class="sub-row">
+        <div><div class="sub-name">${s.name}</div><div class="sub-detail">${s.plan||'—'}${s.contact?' · '+s.contact:''}</div>${s.notes?`<div style="font-family:var(--fm);font-size:8.5px;color:var(--dim);margin-top:2px">${s.notes}</div>`:''}</div>
+        <span class="badge ${bc(s.status)}">${s.status}</span>
+        <div style="font-family:var(--fd);font-size:18px">${s.mrr_value?'$'+s.mrr_value.toLocaleString()+'/mo':''}</div>
+        <div style="display:flex;gap:4px"><button class="btn btn-g btn-xs" onclick="editSubscriber('${s.id}')">Edit</button><button class="btn btn-r btn-xs" onclick="deleteSubscriber('${s.id}')">Del</button></div>
+      </div>`).join('');
+  }
+  const all=subscribers; const active=all.filter(s=>s.status==='active').length; const pipeline=all.filter(s=>s.status==='trial'||s.status==='lead'||s.status==='prospect').length;
+  document.getElementById('sub-stats').innerHTML=`
+    <div class="card"><div class="ch"><div class="ct">Total Contacts</div></div><div class="snum">${all.length}</div><div class="slbl">All products</div></div>
+    <div class="card"><div class="ch"><div class="ct">Active</div><div class="badge bg">Paying</div></div><div class="snum" style="color:var(--green)">${active}</div></div>
+    <div class="card"><div class="ch"><div class="ct">Sub MRR</div></div><div class="snum" style="color:var(--blue)">$${totalMRR.toLocaleString()}</div><div class="slbl">Monthly</div></div>
+    <div class="card"><div class="ch"><div class="ct">Pipeline</div><div class="badge by">Trials+Leads</div></div><div class="snum" style="color:var(--yellow)">${pipeline}</div></div>`;
+}
+
+// ══════════════════════════════════════════════
+// BOARD POSTS
+// ══════════════════════════════════════════════
+let posts=[]; let boardFilter='all'; let likedPosts=JSON.parse(localStorage.getItem('ak_liked')||'[]');
+const CAT_COLORS={milestone:'bb',revenue:'bg',product:'bc',note:'by',alert:'br'};
+const CAT_ICONS={milestone:'🏁',revenue:'💰',product:'🔧',note:'📝',alert:'⚠️'};
+
+async function loadPosts() { posts=await GET('/posts'); renderBoard(); }
+document.getElementById('new-post-btn').onclick=()=>{
+  document.getElementById('post-title').value='';
+  document.getElementById('post-body').value='';
+  document.getElementById('post-pin').checked=false;
+  openModal('post-modal');
+};
+function filterBoard(cat,btn) {
+  boardFilter=cat;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderBoard();
+}
+function renderBoard() {
+  const el=document.getElementById('board-posts');
+  let list=[...posts];
+  if(boardFilter!=='all') list=list.filter(p=>p.category===boardFilter);
+  if(!list.length){el.innerHTML='<div class="empty">No updates yet. Post the first one.</div>';return;}
+  el.innerHTML=list.map(p=>`
+    <div class="post ${p.pinned?'pinned':''}">
+      <div class="post-hd">
+        <div class="post-meta">
+          <div class="post-av" style="background:${p.author==='Clay'?'var(--cglow)':'var(--bglow2)'};color:${p.author==='Clay'?'var(--cyan)':'var(--blue)'}">${p.author[0]}</div>
+          <span class="post-author" style="color:${p.author==='Clay'?'var(--cyan)':'var(--blue)'}">${p.author}</span>
+          <span class="badge ${CAT_COLORS[p.category]}">${CAT_ICONS[p.category]} ${p.category}</span>
+          <span class="post-time">${timeAgo(p.created_at)}</span>
+          ${p.pinned?'<span style="font-family:var(--fm);font-size:8px;color:var(--blue);letter-spacing:1px">📌 PINNED</span>':''}
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-g btn-xs" onclick="togglePin('${p.id}',${p.pinned})">${p.pinned?'Unpin':'📌'}</button>
+          <button class="btn btn-r btn-xs" onclick="deletePost('${p.id}')">Del</button>
+        </div>
+      </div>
+      <div class="post-title">${p.title}</div>
+      <div class="post-body">${p.body.replace(/\n/g,'<br>')}</div>
+      <div class="post-foot">
+        <button class="react-btn ${likedPosts.includes(p.id)?'on':''}" onclick="likePost('${p.id}')">👍 ${p.likes||0}</button>
+      </div>
+    </div>`).join('');
+}
+async function savePost() {
+  const title=document.getElementById('post-title').value.trim();
+  const body=document.getElementById('post-body').value.trim();
+  if(!title||!body) return alert('Title and body required');
+  await POST('/posts',{author:document.getElementById('post-author').value,category:document.getElementById('post-cat').value,title,body,pinned:document.getElementById('post-pin').checked});
+  flash('Posted!'); await loadPosts(); closeModal('post-modal');
+  document.getElementById('board-dot').classList.add('show');
+}
+async function deletePost(id) { if(!confirm('Delete post?')) return; await DEL('/posts/'+id); await loadPosts(); }
+async function togglePin(id,pinned) { await PATCH('/posts/'+id+'/pin',{pinned:!pinned}); await loadPosts(); }
+async function likePost(id) {
+  const action=likedPosts.includes(id)?'unlike':'like';
+  if(action==='like') likedPosts.push(id); else likedPosts=likedPosts.filter(x=>x!==id);
+  localStorage.setItem('ak_liked',JSON.stringify(likedPosts));
+  await PATCH('/posts/'+id+'/like',{action}); await loadPosts();
+}
+
+// ══════════════════════════════════════════════
+// MESSAGES — Realtime via Supabase
+// ══════════════════════════════════════════════
+let messages=[]; let activeChannel='founders'; let rtSub=null;
+const CH_INFO={
+  founders:{name:'Mike + Clay',av:'MC',color:'var(--blue)',bg:'var(--bglow2)'},
+  mike:{name:"Mike's Notes",av:'M',color:'var(--blue)',bg:'var(--bglow2)'},
+  clay:{name:"Clay's Notes",av:'C',color:'var(--cyan)',bg:'var(--cglow)'}
+};
+
+async function loadMessages() {
+  messages=await GET('/messages?channel='+activeChannel);
+  renderChat();
+  subscribeRealtime();
+}
+
+function subscribeRealtime() {
+  if(rtSub) sb.removeChannel(rtSub);
+  rtSub = sb.channel('cc_messages_' + activeChannel)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'cc_messages',filter:'channel=eq.'+activeChannel},
+      payload => {
+        messages.push(payload.new);
+        renderChat();
+        if(activeChannel !== 'founders') document.getElementById('msg-dot').classList.add('show');
+      })
+    .subscribe();
+}
+
+// Also subscribe to board posts for real-time updates
+const postSub = sb.channel('cc_posts_rt')
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'cc_posts'},
+    payload => {
+      posts.unshift(payload.new);
+      renderBoard();
+      document.getElementById('board-dot').classList.add('show');
+    })
+  .subscribe();
+
+function setChannel(ch, el) {
+  activeChannel=ch;
+  document.querySelectorAll('.chat-ch').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const info=CH_INFO[ch];
+  document.getElementById('ch-name').textContent=info.name;
+  const av=document.getElementById('ch-av');
+  av.textContent=info.av; av.style.background=info.bg; av.style.color=info.color;
+  loadMessages();
+}
+
+function renderChat() {
+  const el=document.getElementById('chat-msgs');
+  document.getElementById('ch-count').textContent=messages.length+' messages';
+  if(!messages.length){el.innerHTML='<div style="font-family:var(--fm);font-size:10px;color:var(--dim);text-align:center;padding:30px">No messages yet in this channel.</div>';return;}
+  const me=document.getElementById('chat-who').value;
+  el.innerHTML=messages.map(m=>{
+    const isMike=m.sender==='Mike';
+    const avBg=isMike?'var(--bglow2)':'var(--cglow)';
+    const avCol=isMike?'var(--blue)':'var(--cyan)';
+    const isMine=m.sender===me;
+    return `<div class="cmsg ${isMine?'mine':''}">
+      <div class="cav" style="background:${avBg};color:${avCol};width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:10px;flex-shrink:0">${m.sender[0]}</div>
+      <div class="cmsg-bub"><div class="cmsg-who">${m.sender}</div><div class="cmsg-txt">${m.text}</div><div class="cmsg-ts">${new Date(m.created_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div>
+    </div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+  // sidebar preview
+  if(messages.length){const last=messages[messages.length-1];const prev=document.getElementById('prev-'+activeChannel);if(prev)prev.textContent=last.sender+': '+last.text.slice(0,28)+(last.text.length>28?'…':'');}
+}
+
+async function sendChat() {
+  const inp=document.getElementById('chat-in');
+  const text=inp.value.trim(); if(!text) return;
+  inp.value='';
+  await POST('/messages',{channel:activeChannel,sender:document.getElementById('chat-who').value,text});
+  // realtime will update the UI via subscription
+}
+
+// ══════════════════════════════════════════════
+// BOOT — load everything
+// ══════════════════════════════════════════════
+async function boot() {
+  try {
+    await Promise.all([loadProducts(), loadRoadmap(), loadMRR(), loadTranches(), loadGrants(), loadSubscribers(), loadPosts(), loadMessages()]);
+    renderRDNeeds();
+    flash('Synced', true);
+  } catch(e) {
+    console.error(e);
+    flash('Backend offline — check Render URL', false);
+  }
+}
+boot();
+</script>
+</body>
+</html>
